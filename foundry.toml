@@ -15,3 +15,4 @@ yul = false
 
 [rpc_endpoints]
 mainnet = "https://rpc.mevblocker.io/noreverts"
+anvil = "http://localhost:8545"

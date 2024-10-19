@@ -6,30 +6,39 @@ import "forge-std/Test.sol";
 import "../src/UniswapV3Simulator.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+interface IERC20Mintable is IERC20 {
+    function mint(address to, uint256 amount) external;
+}
+
 contract UniswapV3SimulationTest is Test {
     UniswapV3Simulator public simulator;
-    IERC20 public constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    IERC20 public constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7);
+    IERC20Mintable public constant USDC = IERC20Mintable(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    IERC20Mintable public constant USDT = IERC20Mintable(0xdAC17F958D2ee523a2206206994597C13D831ec7);
     address public constant POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
+    address public constant USDC_OWNER = 0xFcb19e6a322b27c06842A71e8c725399f049AE3a;
+    address public constant USDT_OWNER = 0xC6CDE7C39eB2f0F0095F41570af89eFC2C1Ea828;
 
     uint256 public tokenId;
 
     function setUp() public {
+        vm.createSelectFork("anvil");
         simulator = new UniswapV3Simulator();
-        vm.createSelectFork("mainnet", 20999979); // Fork from the specified block number
     }
 
     function testSimulation() public {
-        // Impersonate a whale account and transfer tokens
-        address whale = 0x28C6c06298d514Db089934071355E5743bf21d60; // Binance 14 wallet
-        vm.startPrank(whale);
-        USDC.transfer(address(this), 1_000_000 * 1e6);
-        USDT.transfer(address(this), 1_000_000 * 1e6);
-        vm.stopPrank();
+        // Directly set token balances
+        deal(address(USDC), address(this), 1_000_000 * 1e6);
+        deal(address(USDT), address(this), 1_000_000 * 1e6);
+
+        // Check balances
+        console.log("Test contract USDC balance:", USDC.balanceOf(address(this)));
+        console.log("Test contract USDT balance:", USDT.balanceOf(address(this)));
 
         // Provide initial liquidity
         USDC.approve(address(simulator), type(uint256).max);
+        console.log("Approved USDC");
         USDT.approve(address(simulator), type(uint256).max);
+        console.log("Approved USDT");
         (tokenId, , , ) = simulator.provideLiquidity(
             address(USDC),
             address(USDT),
@@ -39,6 +48,7 @@ contract UniswapV3SimulationTest is Test {
             1_000_000 * 1e6,
             1_000_000 * 1e6
         );
+        console.log("Provided liquidity successfully");
 
         // Simulate transactions from JSON data
         string memory jsonData = vm.readFile("data/organized_uniswap_data.json");
