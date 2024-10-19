@@ -64,26 +64,39 @@ contract UniswapV3SimulationTest is Test {
         }
 
         // Simulate transactions from JSON data
-        string memory jsonData = vm.readFile("data/organized_uniswap_data.json");
-        bytes memory parsedData = vm.parseJson(jsonData);
+        
+        //eigen.strategyManager = abi.decode(vm.parseJson(json, ".eigen.strategyManager"), (address));
+        //eigen.delegationManager = abi.decode(vm.parseJson(json, ".eigen.delegationManager"), (address));
+
+        console.log("before reading the file");
+        string memory projectFile = string(abi.encodePacked(vm.projectRoot(), "/data/sample.json"));
+        console.log(projectFile);
+        string memory json = vm.readFile(projectFile);
+        console.log("after reading the file");
+        bytes memory parsedData = vm.parseJson(json);
+        console.log("after parsing the file");
+
         
         uint256[] memory blockNumbers = abi.decode(parsedData, (uint256[]));
         string[] memory eventTypes = abi.decode(parsedData, (string[]));
         
         for (uint256 i = 0; i < blockNumbers.length; i++) {
+            console.log(i);
             vm.roll(blockNumbers[i]);
             
             if (keccak256(abi.encodePacked(eventTypes[i])) == keccak256(abi.encodePacked("swaps"))) {
+                console.log("doing swap");
                 simulateSwap(parsedData, i);
             } else if (keccak256(abi.encodePacked(eventTypes[i])) == keccak256(abi.encodePacked("mints"))) {
+                console.log("doing mint");
                 simulateMint(parsedData, i);
             }
             // Note: We're not simulating burns or collects as per the instructions
         }
 
         // Collect fees at the end of the simulation
-        (uint256 amount0, uint256 amount1) = simulator.collectFees(tokenId);
-        console.log("Collected fees: USDC:", amount0, "USDT:", amount1);
+        //(uint256 amount0, uint256 amount1) = simulator.collectFees(tokenId);
+        //console.log("Collected fees: USDC:", amount0, "USDT:", amount1);
     }
 
     function simulateSwap(bytes memory parsedData, uint256 index) internal {
