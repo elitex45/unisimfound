@@ -5,18 +5,15 @@ pragma abicoder v2;
 import "forge-std/Test.sol";
 import "../src/UniswapV3Simulator.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-interface IERC20Mintable is IERC20 {
-    function mint(address to, uint256 amount) external;
-}
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract UniswapV3SimulationTest is Test {
+    using SafeERC20 for IERC20;
+
     UniswapV3Simulator public simulator;
-    IERC20Mintable public constant USDC = IERC20Mintable(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    IERC20Mintable public constant USDT = IERC20Mintable(0xdAC17F958D2ee523a2206206994597C13D831ec7);
+    IERC20 public constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    IERC20 public constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7);
     address public constant POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
-    address public constant USDC_OWNER = 0xFcb19e6a322b27c06842A71e8c725399f049AE3a;
-    address public constant USDT_OWNER = 0xC6CDE7C39eB2f0F0095F41570af89eFC2C1Ea828;
 
     uint256 public tokenId;
 
@@ -34,12 +31,19 @@ contract UniswapV3SimulationTest is Test {
         console.log("Test contract USDC balance:", USDC.balanceOf(address(this)));
         console.log("Test contract USDT balance:", USDT.balanceOf(address(this)));
 
+        // Approve USDC and USDT using SafeERC20
+        console.log("Approving USDC and USDT...");
+        USDC.safeApprove(address(simulator), type(uint256).max);
+        USDT.safeApprove(address(simulator), type(uint256).max);
+        console.log("Approved USDC and USDT");
+
+        // Check allowances
+        console.log("USDC allowance:", USDC.allowance(address(this), address(simulator)));
+        console.log("USDT allowance:", USDT.allowance(address(this), address(simulator)));
+
         // Provide initial liquidity
-        USDC.approve(address(simulator), type(uint256).max);
-        console.log("Approved USDC");
-        USDT.approve(address(simulator), type(uint256).max);
-        console.log("Approved USDT");
-        (tokenId, , , ) = simulator.provideLiquidity(
+        console.log("Providing liquidity...");
+        try simulator.provideLiquidity(
             address(USDC),
             address(USDT),
             100, // 0.01% fee tier
@@ -47,8 +51,17 @@ contract UniswapV3SimulationTest is Test {
             9,
             1_000_000 * 1e6,
             1_000_000 * 1e6
-        );
-        console.log("Provided liquidity successfully");
+        ) returns (uint256 _tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) {
+            tokenId = _tokenId;
+            console.log("Provided liquidity successfully. TokenId:", tokenId);
+            //console.log("Liquidity:", liquidity);
+            console.log("Amount0:", amount0);
+            console.log("Amount1:", amount1);
+        } catch Error(string memory reason) {
+            console.log("Providing liquidity failed. Reason:", reason);
+        } catch (bytes memory lowLevelData) {
+            console.log("Providing liquidity failed. Low-level data:", vm.toString(lowLevelData));
+        }
 
         // Simulate transactions from JSON data
         string memory jsonData = vm.readFile("data/organized_uniswap_data.json");
