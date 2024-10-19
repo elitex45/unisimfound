@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.7.6;
 pragma abicoder v2;
-
+import "forge-std/Test.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract UniswapV3Simulator {
+    using SafeERC20 for IERC20;
     INonfungiblePositionManager public constant nonfungiblePositionManager = INonfungiblePositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
     ISwapRouter public constant swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
@@ -20,8 +22,14 @@ contract UniswapV3Simulator {
         uint256 amount0Desired,
         uint256 amount1Desired
     ) external returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) {
-        IERC20(token0).approve(address(nonfungiblePositionManager), amount0Desired);
-        IERC20(token1).approve(address(nonfungiblePositionManager), amount1Desired);
+        console.log("inside provide liquidity");
+        IERC20(token0).safeTransferFrom(msg.sender, address(this), amount0Desired);
+        IERC20(token1).safeTransferFrom(msg.sender, address(this), amount1Desired);
+        console.log("got tokens");
+
+        IERC20(token0).safeApprove(address(nonfungiblePositionManager), amount0Desired);
+        IERC20(token1).safeApprove(address(nonfungiblePositionManager), amount1Desired);
+        console.log("approved tokens");
 
         INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
             token0: token0,
@@ -36,6 +44,7 @@ contract UniswapV3Simulator {
             recipient: address(this),
             deadline: block.timestamp + 15 minutes
         });
+        console.log("gonna do it now");
 
         (tokenId, liquidity, amount0, amount1) = nonfungiblePositionManager.mint(params);
     }
