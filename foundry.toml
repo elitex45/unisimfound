@@ -8,6 +8,7 @@ remappings = [
     '@uniswap/v3-periphery/=lib/v3-periphery/',
     '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/'
 ]
+fs_permissions = [{ access = "read-write", path = "/Users/engineer/Documents/workspace/zeru/analysis/unisimfound/data/"}]
 eth_rpc_url = 'https://rpc.mevblocker.io/noreverts'
 
 [profile.default.optimizer_details]
@@ -16,6 +17,3 @@ yul = false
 [rpc_endpoints]
 mainnet = "https://rpc.mevblocker.io/noreverts"
 anvil = "http://localhost:8545"
-
-[profile.default.fs]
-fs_permissions = [{ access = "read", path = "data"}]

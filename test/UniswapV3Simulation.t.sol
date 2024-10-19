@@ -69,9 +69,9 @@ contract UniswapV3SimulationTest is Test {
         //eigen.delegationManager = abi.decode(vm.parseJson(json, ".eigen.delegationManager"), (address));
 
         console.log("before reading the file");
-        string memory projectFile = string(abi.encodePacked(vm.projectRoot(), "/data/sample.json"));
-        console.log(projectFile);
-        string memory json = vm.readFile(projectFile);
+        // string memory projectFile = string(abi.encodePacked(vm.projectRoot(), "/data/abc.json"));
+        // console.log(projectFile);
+        string memory json = vm.readFile("/Users/engineer/Documents/workspace/zeru/analysis/unisimfound/data/sample.json");
         console.log("after reading the file");
         bytes memory parsedData = vm.parseJson(json);
         console.log("after parsing the file");
@@ -81,7 +81,7 @@ contract UniswapV3SimulationTest is Test {
         string[] memory eventTypes = abi.decode(parsedData, (string[]));
         
         for (uint256 i = 0; i < blockNumbers.length; i++) {
-            console.log(i);
+            console.log(i,blockNumbers[i]);
             vm.roll(blockNumbers[i]);
             
             if (keccak256(abi.encodePacked(eventTypes[i])) == keccak256(abi.encodePacked("swaps"))) {
@@ -95,8 +95,8 @@ contract UniswapV3SimulationTest is Test {
         }
 
         // Collect fees at the end of the simulation
-        //(uint256 amount0, uint256 amount1) = simulator.collectFees(tokenId);
-        //console.log("Collected fees: USDC:", amount0, "USDT:", amount1);
+        (uint256 amount0, uint256 amount1) = simulator.collectFees(tokenId);
+        console.log("Collected fees: USDC:", amount0, "USDT:", amount1);
     }
 
     function simulateSwap(bytes memory parsedData, uint256 index) internal {
